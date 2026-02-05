@@ -1,6 +1,7 @@
 # OS Internship Log
 
-开源社区实习日志仓库 - 贾一飞
+开源社区实习日志仓库 - 贾一飞  
+**最新例会报告：**[2月7日例会（report_0207 仓库）](https://github.com/yoinspiration/report_0207)
 
 ## 文档
 
