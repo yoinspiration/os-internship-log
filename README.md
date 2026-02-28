@@ -1,6 +1,8 @@
 # OS Internship Log
 
 开源社区实习日志仓库 - 贾一飞  
+
+**📋 最新技术报告：**[2月技术报告](./技术报告2月.md)（部署流程简化、多组织共享、依赖感知测试）  
 **最新例会报告：**[2月7日例会（report_0207 仓库）](https://github.com/yoinspiration/report_0207)
 
 ## 文档
