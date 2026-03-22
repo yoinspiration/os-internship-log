@@ -13,6 +13,14 @@
 - [自动测试系统部署文档](./自动测试系统部署文档.md)
 - [多组织共享测试环境实施文档](./多组织共享测试环境实施文档.md) - 基于文件锁的 Runner 并发控制
 
+### 上游文档快照（`docs/`）
+
+> 与 axvisor / axci / github-runners 仓库同步的说明类文档，**权威版本以各源仓库为准**。
+
+- [AxVisor 与 axci 集成说明](./docs/axvisor-axci-integration.md)（源：`axvisor/doc/axci-integration.md`）
+- [axci 依赖感知：工作原理](./docs/axci-工作原理.md)（源：`axci/docs/工作原理.md`）
+- [多组织部署完整指南](./docs/github-runners-多组织部署指南.md)（源：`github-runners/docs/多组织部署指南.md`）
+
 ## 开发日志
 
 - [第1周（1月20日-1月26日）](./logs/week1.md) - 项目分析、环境搭建、aarch64 多 Guest 测试
