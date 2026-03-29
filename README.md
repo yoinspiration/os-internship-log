@@ -2,6 +2,16 @@
 
 开源社区实习日志仓库 - 贾一飞  
 
+## 文档
+
+- [StarryOS：EEVDF 调度类集成实习报告](./docs/starryos-eevdf-class-scheduler-report.md)（与 StarryOS `docs/report.md` 同步归档）
+- [实习计划](./实习计划.md)
+- [第一阶段学习总结](./第一阶段学习总结.md)
+- [自动测试系统部署文档](./自动测试系统部署文档.md)
+- [多组织共享测试环境实施文档](./多组织共享测试环境实施文档.md) - 基于文件锁的 Runner 并发控制
+- 技术报告： [2月技术报告](./技术报告2月.md)（部署流程简化、多组织共享、依赖感知测试）
+- 例会报告： [2月7日例会（report_0207 仓库）](https://github.com/yoinspiration/report_0207)
+
 ### 上游文档快照（`docs/`）
 
 > 与 axvisor / axci / github-runners 仓库同步的说明类文档，**权威版本以各源仓库为准**。
@@ -10,15 +20,6 @@
 - [AxVisor 与 axci 集成说明](./docs/axvisor-axci-integration.md)（源：`axvisor/doc/axci-integration.md`）
 - [多组织部署完整指南](./docs/github-runners-多组织部署指南.md)（源：`github-runners/docs/多组织部署指南.md`）
 - [视频演示：测试目标选择和多组织部署](https://www.bilibili.com/video/BV1d9ATzgEa9/)
-
-## 文档
-
-- [实习计划](./实习计划.md)
-- [第一阶段学习总结](./第一阶段学习总结.md)
-- [自动测试系统部署文档](./自动测试系统部署文档.md)
-- [多组织共享测试环境实施文档](./多组织共享测试环境实施文档.md) - 基于文件锁的 Runner 并发控制
-- 技术报告： [2月技术报告](./技术报告2月.md)（部署流程简化、多组织共享、依赖感知测试）
-- 例会报告： [2月7日例会（report_0207 仓库）](https://github.com/yoinspiration/report_0207)
 
 ## 开发日志
 
