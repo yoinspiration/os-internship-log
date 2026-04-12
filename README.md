@@ -18,6 +18,7 @@
 - [axci 依赖感知：工作原理](./docs/axci-工作原理.md)（源：`axci/docs/工作原理.md`）
 - [AxVisor 与 axci 集成说明](./docs/axvisor-axci-integration.md)（源：`axvisor/doc/axci-integration.md`）
 - [多组织部署完整指南](./docs/github-runners-多组织部署指南.md)（源：`github-runners/docs/多组织部署指南.md`）
+- [github-runners：PR 贡献与仓库现状说明](./docs/github-runners-PR-contribution-summary.md)
 - [视频演示：测试目标选择和多组织部署](https://www.bilibili.com/video/BV1d9ATzgEa9/)
 
 ## 周报
