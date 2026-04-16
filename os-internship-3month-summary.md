@@ -18,15 +18,15 @@
 #### 关键工作
 
 1. 统一环境准备入口
-- 新增 `scripts/setup_qemu.sh`，统一支持 `arceos` / `linux` / `nimbos` 三类 Guest；
+- 新增 [scripts/setup_qemu.sh](https://github.com/arceos-hypervisor/axvisor/blob/master/scripts/setup_qemu.sh)，统一支持 `arceos` / `linux` / `nimbos` 三类 Guest；
 - 自动执行镜像下载、配置 patch、rootfs 准备，减少手工步骤和路径错误。
 
 2. 补齐文档与上手路径
-- 新增中英文 QEMU 快速上手文档，沉淀从依赖安装到三类 Guest 运行的完整流程；
-- 在 README 中增加快速入口，降低新成员接入成本。
+- 新增中英文 QEMU 快速上手文档：[doc/qemu-quickstart.md](https://github.com/arceos-hypervisor/axvisor/blob/master/doc/qemu-quickstart.md)、[doc/qemu-quickstart_cn.md](https://github.com/arceos-hypervisor/axvisor/blob/master/doc/qemu-quickstart_cn.md)，沉淀从依赖安装到三类 Guest 运行的完整流程；
+- 在 README 中增加快速入口：[README.md](https://github.com/arceos-hypervisor/axvisor/blob/master/README.md)、[README_CN.md](https://github.com/arceos-hypervisor/axvisor/blob/master/README_CN.md)，降低新成员接入成本。
 
 3. 增强 NimbOS 测试可自动化能力
-- 新增 `scripts/ci_run_qemu_nimbos.py`，通过 PTY 方式启动子进程，保障 CI 环境下输入可正确透传；
+- 新增 [scripts/ci_run_qemu_nimbos.py](https://github.com/arceos-hypervisor/axvisor/blob/master/scripts/ci_run_qemu_nimbos.py)，通过 PTY 方式启动子进程，保障 CI 环境下输入可正确透传；
 - 识别 shell 提示后自动触发 `usertests`，并在命中 `usertests passed!` 时返回正确退出码。
 
 4. 提升 CI 失败可观测性与可诊断性
@@ -59,8 +59,8 @@
 #### 关键工作（按迭代演进）
 
 1. 建立锁包装能力（PR [#2](https://github.com/arceos-hypervisor/github-runners/pull/2)、[#3](https://github.com/arceos-hypervisor/github-runners/pull/3)）
-- 为多组织共享硬件引入 `runner-wrapper` 锁包装脚本；
-- 将锁能力集成进 `runner.sh` 工作流，并补齐使用文档，形成可落地的基础方案。
+- 为多组织共享硬件引入 runner-wrapper 锁包装能力（实现见 [runner.sh](https://github.com/arceos-hypervisor/github-runners/blob/main/runner.sh#L780)）；
+- 将锁能力集成进 [`runner.sh`](https://github.com/arceos-hypervisor/github-runners/blob/main/runner.sh) 工作流，并补齐使用文档，形成可落地的基础方案。
 
 2. 标准化锁标识与隔离策略（PR [#4](https://github.com/arceos-hypervisor/github-runners/pull/4)）
 - 将板子锁 ID 收敛到 per-board 默认策略；
@@ -99,7 +99,7 @@
 #### 接入方式（落地步骤）
 
 - 引用方式：在组件仓库 workflow 中显式拉取 `arceos-hypervisor/axci`（固定分支或 commit），复用其 `axci-affected` 与规则处理逻辑；
-- 在仓库测试入口（如 `tests.sh`）接入 `--auto-target` 与 `--base-ref` 参数，支持按基线分支自动选择目标；
+- 在仓库测试入口（如 [`tests.sh`](https://github.com/yoinspiration/axci/blob/test/auto-target-regression/tests.sh)）接入 `--auto-target` 与 `--base-ref` 参数，支持按基线分支自动选择目标；
 - 在 workflow（如 `.github/workflows/test.yml`）增加 detect 阶段：先计算 `targets`，再按 `target_key` 过滤预置矩阵并输出 JSON；
 - 在执行阶段使用 `matrix.include: ${{ fromJson(...) }}` 并行运行目标任务，`skip_all` 时直接跳过无关 job；
 - 保留回退路径：`axci-affected` 不可用时回退到 shell 规则匹配，保证 CI 可用性与渐进迁移。
@@ -116,11 +116,11 @@
 #### 关键工作
 
 1. 合并模块化重构并统一测试入口
-- 将 `main` 分支的脚本模块化重构合入当前分支，形成 `lib/*.sh` 分层结构；
-- 保持 `tests.sh` 作为统一入口，兼容已有流程并提升后续可维护性。
+- 将 `main` 分支的脚本模块化重构合入当前分支，形成 [`lib/*.sh`](https://github.com/yoinspiration/axci/tree/test/auto-target-regression/lib) 分层结构；
+- 保持 [`tests.sh`](https://github.com/yoinspiration/axci/blob/test/auto-target-regression/tests.sh) 作为统一入口，兼容已有流程并提升后续可维护性。
 
 2. 引入规则驱动自动目标选择
-- 在 `tests.sh` 增加 `--auto-target`、`--base-ref` 能力；
+- 在 [`tests.sh`](https://github.com/yoinspiration/axci/blob/test/auto-target-regression/tests.sh) 增加 `--auto-target`、`--base-ref` 能力；
 - 新增 `configs/test-target-rules.json`，将路径匹配与依赖规则配置化；
 - 优先使用 `axci-affected` 引擎做影响范围分析，失败时回退到 shell 规则匹配，保证可用性。
 
@@ -130,7 +130,7 @@
 - 补充 git 网络抗抖动参数、checkout 超时与关键依赖检查，降低网络和环境抖动带来的不确定失败。
 
 4. 加固 Starry 测试链路
-- 将测试触发改为 `scripts/ci-test.py`，缓解长驻命令导致的超时风险；
+- 将测试触发改为 [`scripts/ci-test.py`](https://github.com/yoinspiration/axci/blob/test/auto-target-regression/scripts/ci-test.py)，缓解长驻命令导致的超时风险；
 - 在运行前增加 `disk.img` 检查与软链兜底逻辑，减少镜像路径问题导致的无效失败。
 
 #### 阶段性价值
@@ -183,7 +183,7 @@
 4. 完成与运行队列集成及可观测性建设
 - 在 `crates/axtask/src/run_queue.rs` 接入 tick 调度与抢占路径；
 - 增加 EEVDF 统计项（picks、preempt、slice_expired、fallback）及周期日志输出；
-- 提供 `scripts/demo-eevdf-stats.sh`、`scripts/bench-regression-eevdf.sh`、`scripts/parse-eevdf-stats-log.sh`，形成“采集-解析-回归”自动化链路。
+- 提供 [`scripts/demo-eevdf-stats.sh`](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/scripts/demo-eevdf-stats.sh)、[`scripts/bench-regression-eevdf.sh`](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/scripts/bench-regression-eevdf.sh)、[`scripts/parse-eevdf-stats-log.sh`](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/scripts/parse-eevdf-stats-log.sh)，形成“采集-解析-回归”自动化链路。
 
 5. 支持多 CPU 指定调度算法（per-CPU 异构调度）
 - 设计并实现调度器元数据分离，支持不同 CPU 绑定不同调度算法，避免全局单策略耦合；
@@ -223,7 +223,7 @@
 - 运行队列与调度接入：`crates/axtask/src/run_queue.rs`
 - 多 CPU 策略注入：`axruntime-patched/build.rs`、`axruntime-patched/src/lib.rs`
 - 编译期配置触发：`kernel/build.rs`
-- 观测与回归脚本：`scripts/demo-eevdf-stats.sh`、`scripts/bench-regression-eevdf.sh`、`scripts/parse-eevdf-stats-log.sh`
+- 观测与回归脚本：[scripts/demo-eevdf-stats.sh](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/scripts/demo-eevdf-stats.sh)、[scripts/bench-regression-eevdf.sh](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/scripts/bench-regression-eevdf.sh)、[scripts/parse-eevdf-stats-log.sh](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/scripts/parse-eevdf-stats-log.sh)
 
 #### 经验复盘
 
