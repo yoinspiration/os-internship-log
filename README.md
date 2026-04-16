@@ -4,7 +4,7 @@
 
 ## 文档
 
-- [StarryOS：EEVDF 调度与优先级接口实习报告](./docs/starryos-eevdf-class-scheduler-report.md)（与 StarryOS `docs/report.md` 同步归档；文件名保留历史命名）
+- [三个月实习总结](./os-internship-3month-summary.md)
 - [实习计划](./实习计划.md)
 - [第一阶段学习总结](./第一阶段学习总结.md)
 - [自动测试系统部署文档](./自动测试系统部署文档.md)
