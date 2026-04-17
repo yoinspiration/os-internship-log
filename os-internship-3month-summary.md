@@ -205,9 +205,30 @@
 - fallback 场景测试：在强制无 eligible 条件下，兜底逻辑与统计计数行为符合预期。
 
 2. QEMU 实测表现
-- 在 StarryOS 压测场景中，`preempt_by_deadline` 与 `slice_expired` 均有稳定触发；
-- `fallback_no_eligible` 在常规负载下接近 0，说明系统大多数时刻可由 eligible 主路径完成调度；
-- 从日志观察到调度行为可解释、趋势稳定，支持后续回归比较与参数调优。
+- QEMU 下调度统计与现场压测结果一致：负载窗口内调度行为稳定且可解释，未观察到 `fallback` 退化，可用于后续回归比较与参数调优。
+
+3. 现场性能与任务切换延时数据（riscv64-qemu-virt，SMP=1）
+- 前台延时对比（4 个后台 `yes` 压力任务）：
+  - | 场景 | N | p50 | p95 | p99 | max |
+    | --- | ---: | ---: | ---: | ---: | ---: |
+    | `base` | 50 | 0.630s | 0.640s | 0.640s | 0.850s |
+    | `nice19` | 50 | 0.040s | 0.040s | 0.040s | 0.040s |
+  - 结论：降低后台优先级后，前台命令 tail latency（`p95/p99`）约改善 `16x`（`0.64s -> 0.04s`），最坏时延从 `0.85s` 降到 `0.04s`。
+- 任务切换延时（EEVDF 周期统计日志）：
+  - 观测窗口：`interval_ticks=256`，`ticks_per_sec=100`，单窗口时长 `2.56s`
+  - 负载阶段多窗口 `delta[picks]` 稳定在 `51` 左右（停压过渡窗口约 `45`）
+  - 估算平均任务切换间隔：`2560 / 51 ≈ 50.2ms`（过渡窗口 `2560 / 45 ≈ 56.9ms`）
+  - 对应切换频率约 `19.9Hz`（过渡窗口约 `17.6Hz`）
+- 调度行为解释：
+  - `slice_expired` 在负载窗口持续增长，说明切换主要由时间片驱动；
+  - `preempt_by_deadline` 有触发但非主导路径；
+  - `fallback_no_eligible=0`，未出现“无 eligible 任务”退化情况。
+  - 小结：在持续负载下，EEVDF 调度表现为稳定的时间片主导切换（约 `50ms/次`），偶发 deadline 抢占，且无 fallback 退化，行为与设计预期一致。
+- 测量方法（可复现）：
+  - 环境：`riscv64-qemu-virt`，`release` 构建，`SMP=1`，`LOG=info`，启用 `eevdf-stats-demo`。
+  - 负载与探针：后台启动 `4` 个 `yes >/dev/null`，前台以 `ls` 作为短任务探针，采样次数 `N=50`。
+  - 前台延时统计：使用 `/usr/bin/time -f "%e"` 记录每次 `ls` 的 wall time，按升序计算 `p50/p95/p99/max`。
+  - 任务切换延时统计：读取 `eevdf stats` 日志中的 `delta[picks]`；窗口配置为 `interval_ticks=256`、`ticks_per_sec=100`（窗口时长 `2.56s`）；平均任务切换间隔按 `2560 / delta_picks (ms)` 估算，切换频率按其倒数换算为 `Hz`。
 
 #### 结果与价值
 
@@ -231,3 +252,25 @@
 2. 可观测性应与算法实现同步建设，否则难以在真实负载下解释行为差异；
 3. 对“无 eligible”这类边界路径提前设计 fallback 与测试，能显著降低线上不确定性；
 4. 通过“文档 + 脚本 + 单测”三位一体沉淀，能让调度改动从个人经验升级为团队资产。
+
+#### 附录：关键复现命令
+
+```sh
+# 1) 启动带统计日志的系统（host）
+make ARCH=riscv64 run LOG=info FEATURES=eevdf-stats-demo
+
+# 2) 运行前台延时回归（guest，方式 A：cat 生成脚本后执行）
+cat > /root/bench-regression-eevdf.sh <<'EOF'
+# 粘贴仓库中 scripts/bench-regression-eevdf.sh 的完整内容
+EOF
+chmod +x /root/bench-regression-eevdf.sh
+sh /root/bench-regression-eevdf.sh
+
+# 3) 施加/停止 CPU 负载以观测调度窗口统计（guest）
+for i in 1 2 3 4; do yes >/dev/null & done
+sleep 10
+killall yes 2>/dev/null
+
+# 4) 解析串口日志，得到窗口级调度统计与切换间隔估算（host）
+scripts/parse-eevdf-stats-log.sh ./bench-results/serial.log
+```
