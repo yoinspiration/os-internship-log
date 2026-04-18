@@ -198,6 +198,8 @@
 
 #### 实验结果
 
+以下 QEMU 延时表与切换间隔估算为**代表性一次测量**；不同主机负载、`SAMPLES`/`LOAD` 与内核版本下数值会变化，结论以「base 与 nice19 的相对关系」及当次 `serial.log`、结果目录为准。
+
 1. 单元测试结果
 - 等权重公平性测试：3 个 nice=0 任务长期运行后，CPU 占比误差控制在预期范围内；
 - 加权公平性测试：nice -5/0/+5 场景下，CPU 占比与权重比一致性良好；
@@ -256,21 +258,31 @@
 #### 附录：关键复现命令
 
 ```sh
-# 1) 启动带统计日志的系统（host）
-make ARCH=riscv64 run LOG=info FEATURES=eevdf-stats-demo
+# 0) 串口落盘（host，在 StarryOS 仓库根目录；目录需事先存在）
+mkdir -p bench-results
+make ARCH=riscv64 run LOG=info FEATURES=eevdf-stats-demo 2>&1 | tee bench-results/serial.log
 
-# 2) 运行前台延时回归（guest，方式 A：cat 生成脚本后执行）
-cat > /root/bench-regression-eevdf.sh <<'EOF'
-# 粘贴仓库中 scripts/bench-regression-eevdf.sh 的完整内容
-EOF
-chmod +x /root/bench-regression-eevdf.sh
+# 1) 单元测试（host，可选）
+cargo test -p axsched
+
+# 2) 运行前台延时回归（guest）
+# 使用仓库 scripts/bench-regression-eevdf.sh（wget 到 /root/ 或自行拷贝）。
+# StarryOS/busybox 下建议先建结果目录，并显式指定 RESULT_DIR，避免 mkdir 行为差异：
+mkdir /tmp/bench-results 2>/dev/null || true
+export RESULT_DIR=/tmp/bench-results
+export SAMPLES='50,200'
+export LOAD=4
 sh /root/bench-regression-eevdf.sh
+# 结束后可检查：ls -la /tmp/bench-results 与 cat .../ls-latest-table.md
 
-# 3) 施加/停止 CPU 负载以观测调度窗口统计（guest）
+# 3) 施加/停止 CPU 负载以观测 eevdf stats（guest）
 for i in 1 2 3 4; do yes >/dev/null & done
 sleep 10
 killall yes 2>/dev/null
 
-# 4) 解析串口日志，得到窗口级调度统计与切换间隔估算（host）
-scripts/parse-eevdf-stats-log.sh ./bench-results/serial.log
+# 4) 解析串口日志（host；TICKS_PER_SEC 需与内核 tick 频率一致，否则毫秒类估算仅作相对参考）
+TICKS_PER_SEC=100 INTERVAL_TICKS=256 \
+  sh scripts/parse-eevdf-stats-log.sh ./bench-results/serial.log
 ```
+
+说明：上文「实验结果」中的延时表与切换间隔估算来自**代表性一次测量**，不同 QEMU/主机负载下数值会波动；报告引用时建议以当次 `serial.log`、`/tmp/bench-results` 输出及解析脚本结果为准。
