@@ -192,7 +192,7 @@
 - 与 Linux 现状相比，当前方案仍以编译期静态指定为主：尚未覆盖运行时动态策略切换、成熟的跨 CPU 负载均衡协同以及更完整的调度域/拓扑感知能力。
 
 6. 补齐文档与验证闭环
-- 输出概念与实现文档：[docs/report/eevdf-concept.md](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/docs/report/eevdf-concept.md)、[docs/starry-scheduling.md](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/docs/starry-scheduling.md)；
+- 输出概念与实现文档：[docs/starry-scheduling.md](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/docs/starry-scheduling.md)；
 - 沉淀测试与演示报告：[docs/report/eevdf-unit-tests-summary.md](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/docs/report/eevdf-unit-tests-summary.md)、[docs/report/eevdf-nice-demo-summary.md](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/docs/report/eevdf-nice-demo-summary.md)；
 - 给出从理论到实测的一体化说明，降低后续同学接手成本。
 
