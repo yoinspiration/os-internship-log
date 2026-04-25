@@ -1,5 +1,9 @@
 # 实习三个月技术总结报告
 
+## 摘要
+
+本报告汇总实习三个月在测试系统和 EEVDF 调度算法的技术产出。测试工程方面：在 AxVisor 中推进 QEMU CI 稳定性，统一 ArceOS/Linux/NimbOS 环境准备脚本、补充中英文快速上手文档，并以 PTY 驱动 NimbOS 自动化与 `fail_regex` 等增强失败可观测性；在 `github-runners` 中基于 `flock` 建立多组织共享开发板的 per-board 硬件锁，迭代修复取消路径竞态与僵尸锁问题；在 `axci` 中设计规则驱动、依赖感知的自动测试目标选择，结合 `git diff`、反向依赖图与可配置规则缩小无关全量测试范围。内核方面：在 StarryOS 分支上实现 EEVDF 调度器（双索引、deadline 抢占、统计与文档/单测/演示脚本闭环），并完成 per-CPU 异构调度与 QEMU 下代表性延时与切换行为验证。
+
 ## 自动测试系统
 
 ### 1. AxVisor QEMU CI 稳定性改进
@@ -11,6 +15,7 @@
 #### 背景问题
 
 在 AxVisor 的 QEMU 自动化测试中，存在以下痛点：
+
 - 不同 Guest（ArceOS / Linux / NimbOS）环境准备流程分散，维护成本高；
 - NimbOS 场景依赖交互式输入，CI 中容易出现“测试通过但任务失败”的误报；
 - 失败信号不够明确，panic 等异常无法被尽早识别。
@@ -18,18 +23,22 @@
 #### 关键工作
 
 1. 统一环境准备入口
+
 - 新增 [scripts/setup_qemu.sh](https://github.com/arceos-hypervisor/axvisor/blob/master/scripts/setup_qemu.sh)，统一支持 `arceos` / `linux` / `nimbos` 三类 Guest；
 - 自动执行镜像下载、配置 patch、rootfs 准备，减少手工步骤和路径错误。
 
-2. 补齐文档与上手路径
+1. 补齐文档与上手路径
+
 - 新增中英文 QEMU 快速上手文档：[doc/qemu-quickstart.md](https://github.com/arceos-hypervisor/axvisor/blob/master/doc/qemu-quickstart.md)、[doc/qemu-quickstart_cn.md](https://github.com/arceos-hypervisor/axvisor/blob/master/doc/qemu-quickstart_cn.md)，沉淀从依赖安装到三类 Guest 运行的完整流程；
 - 在 README 中增加快速入口：[README.md](https://github.com/arceos-hypervisor/axvisor/blob/master/README.md)、[README_CN.md](https://github.com/arceos-hypervisor/axvisor/blob/master/README_CN.md)，降低新成员接入成本。
 
-3. 增强 NimbOS 测试可自动化能力
+1. 增强 NimbOS 测试可自动化能力
+
 - 新增 [scripts/ci_run_qemu_nimbos.py](https://github.com/arceos-hypervisor/axvisor/blob/master/scripts/ci_run_qemu_nimbos.py)，通过 PTY 方式启动子进程，保障 CI 环境下输入可正确透传；
 - 识别 shell 提示后自动触发 `usertests`，并在命中 `usertests passed!` 时返回正确退出码。
 
-4. 提升 CI 失败可观测性与可诊断性
+2. 提升 CI 失败可观测性与可诊断性
+
 - 在 QEMU 配置中补充 `fail_regex`（如 `panicked at`），尽早暴露 guest panic；
 - 对 NimbOS 启动依赖（`axvm-bios.bin`）进行前置校验，避免隐式失败。
 
@@ -59,14 +68,17 @@
 #### 关键工作（按迭代演进）
 
 1. 建立锁包装能力（PR [#2](https://github.com/arceos-hypervisor/github-runners/pull/2)、[#3](https://github.com/arceos-hypervisor/github-runners/pull/3)）
+
 - 为多组织共享硬件引入 runner-wrapper 锁包装能力（实现见 [runner-wrapper.sh](https://github.com/yoinspiration/github-runners/blob/feat/board-lock-watcher/runner-wrapper/runner-wrapper.sh)）；
 - 将锁能力集成进 [runner.sh](https://github.com/yoinspiration/github-runners/blob/feat/board-lock-watcher/runner.sh) 工作流，并补齐使用文档，形成可落地的基础方案。
 
 2. 标准化锁标识与隔离策略（PR [#4](https://github.com/arceos-hypervisor/github-runners/pull/4)）
+
 - 将板子锁 ID 收敛到 per-board 默认策略；
 - 将容器命名自动拼入 org/repo 维度，降低跨组织任务冲突概率。
 
 3. 修复并发竞态与取消场景（PR [#11](https://github.com/arceos-hypervisor/github-runners/pull/11)、[#13](https://github.com/arceos-hypervisor/github-runners/pull/13)）
+
 - 加固多组织 Runner 锁机制，修复 cancel 场景下的并行竞态问题；
 - 将 cancel watcher 与 `docker compose` 生命周期集成，随 Runner 一起启动/回收，对使用者基本无感；
 - 支持在 Cancel 路径自动释放开发板锁，减少“僵尸锁”导致的资源阻塞；
@@ -116,19 +128,23 @@
 #### 关键工作
 
 1. 合并模块化重构并统一测试入口
+
 - 保持 [tests.sh](https://github.com/yoinspiration/axci/blob/test/auto-target-regression/tests.sh) 作为统一入口，兼容已有流程并提升后续可维护性。
 
 2. 引入规则驱动自动目标选择
+
 - 在 [tests.sh](https://github.com/yoinspiration/axci/blob/test/auto-target-regression/tests.sh) 增加 `--auto-target`、`--base-ref` 能力；
 - 新增 `configs/test-target-rules.json`，将路径匹配与依赖规则配置化；
 - 优先使用 `axci-affected` 引擎做影响范围分析，失败时回退到 shell 规则匹配，保证可用性。
 
 3. 增强 CI 可观测性与稳定性
+
 - 在 `test.yml` 增加 `test_targets=auto` 相关输入与 `detect-targets` 检测链路；
 - 输出自动选择决策摘要（selection mode、auto reason、target list）到 `GITHUB_STEP_SUMMARY`；
 - 补充 git 网络抗抖动参数、checkout 超时与关键依赖检查，降低网络和环境抖动带来的不确定失败。
 
 4. 加固 Starry 测试链路
+
 - 在运行前增加 `disk.img` 检查与软链兜底逻辑，减少镜像路径问题导致的无效失败。
 
 #### 阶段性价值
@@ -158,6 +174,7 @@
 #### 背景问题
 
 在操作系统调度中，需要同时满足两类目标：
+
 - 公平性：不同优先级任务应按权重获得合理 CPU 份额；
 - 响应性：交互任务应尽快获得服务，避免高负载下长尾延迟。
 
@@ -166,32 +183,38 @@
 #### 关键工作
 
 1. 完成 per-task EEVDF 核心调度逻辑
+
 - 在 `crates/axsched/src/eevdf.rs` 中实现 `EevdfScheduler` 与 `EevdfEntity`；
 - 任务实体维护 `vruntime`、`deadline`、`nice`、`slice` 等关键元数据；
 - 采用 Linux 兼容 nice->weight 映射（-20..19）并据此计算 vruntime 增量与 deadline。
 
 2. 设计双索引结构，兼顾选择效率与资格判断
+
 - `ready_queue`：按 `(deadline, id)` 排序，快速获得最早 deadline 任务；
 - `vrt_set`：按 `(vruntime, id)` 排序，用于 `vruntime <= V` 的 eligible 范围查询；
 - `id_to_deadline`：连接两套索引，保障在慢路径下仍可高效定位候选任务。
 
 3. 完成 EEVDF 选取与抢占策略
+
 - `pick_next_task`：优先走快路径（最早 deadline 且 eligible），否则走慢路径筛选 eligible 中 deadline 最小任务；
 - 当无 eligible 任务时启用 fallback（直接取最早 deadline）保证系统可推进；
 - `task_tick` 中实现 deadline 驱动抢占：若队首任务 eligible 且 deadline 更早，则触发抢占。
 
 4. 完成与运行队列集成及可观测性建设
+
 - 在 `crates/axtask/src/run_queue.rs` 接入 tick 调度与抢占路径；
 - 增加 EEVDF 统计项（picks、preempt、slice_expired、fallback）及周期日志输出；
 - 提供 [scripts/demo-eevdf-stats.sh](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/scripts/demo-eevdf-stats.sh)、[scripts/bench-regression-eevdf.sh](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/scripts/bench-regression-eevdf.sh)、[scripts/parse-eevdf-stats-log.sh](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/scripts/parse-eevdf-stats-log.sh)，形成“采集-解析-回归”自动化链路。
 
 5. 支持多 CPU 指定调度算法（per-CPU 异构调度）
+
 - 设计并实现调度器元数据分离，支持不同 CPU 绑定不同调度算法，避免全局单策略耦合；
 - 引入 `CPU_SCHED` 编译期配置，支持按 CPU 维度声明调度策略；
 - 补充跨调度器迁移路径的设计与验证要点，保证任务迁移过程的状态一致性与可预期行为。
 - 与 Linux 现状相比，当前方案仍以编译期静态指定为主：尚未覆盖运行时动态策略切换、成熟的跨 CPU 负载均衡协同以及更完整的调度域/拓扑感知能力。
 
 6. 补齐文档与验证闭环
+
 - 输出概念与实现文档：[docs/starry-scheduling.md](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/docs/starry-scheduling.md)；
 - 沉淀测试与演示报告：[docs/report/eevdf-unit-tests-summary.md](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/docs/report/eevdf-unit-tests-summary.md)、[docs/report/eevdf-nice-demo-summary.md](https://github.com/yoinspiration/StarryOS/blob/feat/eevdf-scheduler/docs/report/eevdf-nice-demo-summary.md)；
 - 给出从理论到实测的一体化说明，降低后续同学接手成本。
@@ -201,20 +224,25 @@
 以下 QEMU 延时表与切换间隔估算为**代表性一次测量**；不同主机负载、`SAMPLES`/`LOAD` 与内核版本下数值会变化，结论以「base 与 nice19 的相对关系」及当次 `serial.log`、结果目录为准。
 
 1. 单元测试结果
+
 - 等权重公平性测试：3 个 nice=0 任务长期运行后，CPU 占比误差控制在预期范围内；
 - 加权公平性测试：nice -5/0/+5 场景下，CPU 占比与权重比一致性良好；
 - 抢占与 deadline 修正测试：覆盖“时间片耗尽”和“提前抢占后剩余时间片重算”路径；
 - fallback 场景测试：在强制无 eligible 条件下，兜底逻辑与统计计数行为符合预期。
 
 2. QEMU 实测表现
+
 - QEMU 下调度统计与现场压测结果一致：负载窗口内调度行为稳定且可解释，未观察到 `fallback` 退化，可用于后续回归比较与参数调优。
 
 3. 现场性能与任务切换延时数据（riscv64-qemu-virt，SMP=1）
+
 - 前台延时对比（4 个后台 `yes` 压力任务）：
-  - | 场景 | N | p50 | p95 | p99 | max |
-    | --- | ---: | ---: | ---: | ---: | ---: |
-    | `base` | 50 | 0.630s | 0.640s | 0.640s | 0.850s |
-    | `nice19` | 50 | 0.040s | 0.040s | 0.040s | 0.040s |
+  - 
+  | 场景       | N   | p50    | p95    | p99    | max    |
+  | -------- | --- | ------ | ------ | ------ | ------ |
+  | `base`   | 50  | 0.630s | 0.640s | 0.640s | 0.850s |
+  | `nice19` | 50  | 0.040s | 0.040s | 0.040s | 0.040s |
+
   - 结论：降低后台优先级后，前台命令 tail latency（`p95/p99`）约改善 `16x`（`0.64s -> 0.04s`），最坏时延从 `0.85s` 降到 `0.04s`。
 - 任务切换延时（EEVDF 周期统计日志）：
   - 观测窗口：`interval_ticks=256`，`ticks_per_sec=100`，单窗口时长 `2.56s`
@@ -286,3 +314,25 @@ TICKS_PER_SEC=100 INTERVAL_TICKS=256 \
 ```
 
 说明：上文「实验结果」中的延时表与切换间隔估算来自**代表性一次测量**，不同 QEMU/主机负载下数值会波动；报告引用时建议以当次 `serial.log`、`/tmp/bench-results` 输出及解析脚本结果为准。
+
+## 相关链接
+
+本节汇总与本报告对应的**实习过程记录仓库**、**主要上游/个人源码仓库**，以及周报、月报与部署类文档入口，便于对照 PR 与日常开发轨迹。
+
+### 实习日志与过程文档（本仓库）
+
+- 仓库根与索引：[os-internship-log](https://github.com/yoinspiration/os-internship-log)（开源社区实习日志；`README.md` 中含文档索引、周报与月报列表）
+- 按周记录：`logs/week1.md` … `logs/week12.md`（路径相对仓库根，例如 [logs/](https://github.com/yoinspiration/os-internship-log/tree/main/logs)）
+- 月报与技术报告：`技术报告2月.md`、`技术报告3月-贾一飞.md`；部署与实施说明见 `自动测试系统部署文档.md`、`多组织共享测试环境实施文档.md`
+
+### 源代码仓库（报告涉及的主要工程）
+
+
+| 工程                                                                                             | 说明                                        |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| [arceos-hypervisor/axvisor](https://github.com/arceos-hypervisor/axvisor/pull/363)                      |  AxVisor QEMU CI 稳定性改进 |
+| [arceos-hypervisor/github-runners](https://github.com/arceos-hypervisor/github-runners/pulls?q=is%3Apr+author%3Ayoinspiration+is%3Aclosed)        | 多组织共享 Runner 与开发板锁           |
+| [arceos-hypervisor/axci](https://github.com/arceos-hypervisor/axci/pull/9)                            | 组件 CI 与测试编排，自动目标选择相              |
+| [yoinspiration/StarryOS](https://github.com/yoinspiration/StarryOS/tree/feat/eevdf-scheduler) | EEVDF 调度器实现与验证脚本所在个人分支                    |
+
+
